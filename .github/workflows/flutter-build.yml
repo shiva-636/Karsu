@@ -29,7 +29,9 @@ jobs:
 
       - name: Generate Android platform
         working-directory: mobile
-        run: flutter create --platforms=android --project-name=karsu .
+        run: |
+          flutter create --platforms=android --project-name=karsu .
+          rm -rf test
 
       - name: Get dependencies
         working-directory: mobile
