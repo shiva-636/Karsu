@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .env
 .env.*
 !.env.example
@@ -9,3 +10,7 @@ mobile/build/
 mobile/.packages
 .DS_Store
 *.log
+=======
+*.agdai
+**/MAlonzo/**
+>>>>>>> 03e99833cf529d4b59f00732d88168d75d72e866
