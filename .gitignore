@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+backend/dist/
+backend/*.tsbuildinfo
+mobile/.dart_tool/
+mobile/build/
+mobile/.packages
+.DS_Store
+*.log

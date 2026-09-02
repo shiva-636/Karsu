@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-karsu}
+      POSTGRES_USER: ${POSTGRES_USER:-karsu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before starting Docker}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-karsu} -d ${POSTGRES_DB:-karsu}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - karsu_pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+volumes:
+  karsu_pgdata:
