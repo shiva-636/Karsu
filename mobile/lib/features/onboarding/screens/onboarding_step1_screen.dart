@@ -1,16 +1,399 @@
+cat > mobile/lib/features/onboarding/screens/onboarding_step1_screen.dart <<'EOF'
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
+
 import '../../../core/networking/api_client.dart';
 import '../../../core/state/app_state.dart';
+import '../../../core/theme/app_theme.dart';
 
-class OnboardingWizard extends StatefulWidget{const OnboardingWizard({super.key});@override State<OnboardingWizard> createState()=>_OnboardingWizardState();}
-class _OnboardingWizardState extends State<OnboardingWizard>{int step=0;String type='Software',industry='AI / ML',stage='Idea',time='60 min';final idea=TextEditingController(),problem=TextEditingController(),customer=TextEditingController();bool saving=false;
- final types=['Software','Hardware','Software + Hardware','Physical Product','Service','E-commerce','Not decided'];final industries=['AI / ML','SaaS','FinTech','EdTech','Gaming','HealthTech','AgriTech','Cybersecurity','Other'];final stages=['Idea','Validating','Prototype / MVP','Early customers','Revenue','Growing'];
- @override void dispose(){idea.dispose();problem.dispose();customer.dispose();super.dispose();}
- Future<void> finish() async {setState(()=>saving=true);try{final map={'Idea':'idea','Validating':'validation','Prototype / MVP':'prototype','Early customers':'early_revenue','Revenue':'early_revenue','Growing':'growth'};await apiClient.post('/businesses',{'businessType':[type],'industry':industry,'stage':map[stage]??'idea','idea':idea.text.trim(),'problem':problem.text.trim(),'targetCustomer':customer.text.trim(),'availableTimeMinutesPerDay':int.tryParse(time.split(' ').first)??60});appState.onboardingComplete=true; appState.notifyListeners(); if(mounted)context.go('/dashboard');}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Could not save your profile: $e')));}finally{if(mounted)setState(()=>saving=false);}}
- void next(){if(step<3){setState(()=>step++);}else{finish();}}
- @override Widget build(BuildContext context){final titles=['What are you building?','Where will you compete?','Tell IV the idea.','How much time do you have?'];return Scaffold(body:SafeArea(child:Padding(padding:const EdgeInsets.fromLTRB(AppSpacing.lg,AppSpacing.md,AppSpacing.lg,AppSpacing.lg),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[const Text('KARSU',style:TextStyle(fontWeight:FontWeight.w900,letterSpacing:2)),const Spacer(),Text('${step+1}/4',style:const TextStyle(color:AppColors.textSecondary))]),const SizedBox(height:14),ClipRRect(borderRadius:BorderRadius.circular(20),child:LinearProgressIndicator(value:(step+1)/4,minHeight:6,backgroundColor:AppColors.elevated)),const SizedBox(height:30),Text(titles[step],style:const TextStyle(fontSize:30,fontWeight:FontWeight.w900)),const SizedBox(height:7),const Text('Answer what you know. You can refine it later.',style:TextStyle(color:AppColors.textSecondary)),const SizedBox(height:24),Expanded(child:SingleChildScrollView(child:_content())),Row(children:[if(step>0)Expanded(child:OutlinedButton(onPressed:saving?null:()=>setState(()=>step--),child:const Text('Back'))),if(step>0)const SizedBox(width:12),Expanded(flex:2,child:ElevatedButton(onPressed:saving?null:next,child:saving?const SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):Text(step==3?'Create my roadmap':'Continue')))])])));}
- Widget _chips(List<String> values,String selected,void Function(String) on)=>Wrap(spacing:10,runSpacing:10,children:values.map((v){final a=v==selected;return ChoiceChip(label:Text(v),selected:a,onSelected:(_)=>on(v),selectedColor:AppColors.primary,backgroundColor:AppColors.surface,side:const BorderSide(color:AppColors.border),labelStyle:TextStyle(color:a?Colors.white:AppColors.textSecondary,fontWeight:FontWeight.w600));}).toList());
- Widget _content(){switch(step){case 0:return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Business type',style:TextStyle(fontWeight:FontWeight.w700)),const SizedBox(height:12),_chips(types,type,(v)=>setState(()=>type=v)),const SizedBox(height:24),const Text('Current stage',style:TextStyle(fontWeight:FontWeight.w700)),const SizedBox(height:12),_chips(stages,stage,(v)=>setState(()=>stage=v))]);case 1:return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Industry',style:TextStyle(fontWeight:FontWeight.w700)),const SizedBox(height:12),_chips(industries,industry,(v)=>setState(()=>industry=v))]);case 2:return Column(children:[TextField(controller:idea,maxLines:3,decoration:const InputDecoration(labelText:'What are you building?',hintText:'Product, service or business idea')),const SizedBox(height:14),TextField(controller:problem,maxLines:3,decoration:const InputDecoration(labelText:'What problem does it solve?',hintText:'What painful problem are you solving?')),const SizedBox(height:14),TextField(controller:customer,decoration:const InputDecoration(labelText:'Who is the first customer?',hintText:'Be specific if possible'))]);default:return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Daily focus time',style:TextStyle(fontWeight:FontWeight.w700)),const SizedBox(height:12),_chips(['30 min','60 min','90 min','120 min','180 min'],time,(v)=>setState(()=>time=v)),const SizedBox(height:28),Card(child:Padding(padding:const EdgeInsets.all(AppSpacing.lg),child:Row(children:[const Icon(Icons.auto_awesome,color:AppColors.primary),const SizedBox(width:14),Expanded(child:Text('IV will use your stage, goals and activity to recommend a focused next step.',style:const TextStyle(color:AppColors.textSecondary,height:1.45)))]))) ]);}}
+class OnboardingWizard extends StatefulWidget {
+  const OnboardingWizard({super.key});
+
+  @override
+  State<OnboardingWizard> createState() => _OnboardingWizardState();
+}
+
+class _OnboardingWizardState extends State<OnboardingWizard> {
+  int step = 0;
+
+  String type = 'Software';
+  String industry = 'AI / ML';
+  String stage = 'Idea';
+  String time = '60 min';
+
+  final idea = TextEditingController();
+  final problem = TextEditingController();
+  final customer = TextEditingController();
+
+  bool saving = false;
+
+  final types = [
+    'Software',
+    'Hardware',
+    'Software + Hardware',
+    'Physical Product',
+    'Service',
+    'E-commerce',
+    'Not decided',
+  ];
+
+  final industries = [
+    'AI / ML',
+    'SaaS',
+    'FinTech',
+    'EdTech',
+    'Gaming',
+    'HealthTech',
+    'AgriTech',
+    'Cybersecurity',
+    'Other',
+  ];
+
+  final stages = [
+    'Idea',
+    'Validating',
+    'Prototype / MVP',
+    'Early customers',
+    'Revenue',
+    'Growing',
+  ];
+
+  @override
+  void dispose() {
+    idea.dispose();
+    problem.dispose();
+    customer.dispose();
+    super.dispose();
+  }
+
+  Future<void> finish() async {
+    setState(() => saving = true);
+
+    try {
+      final stageMap = {
+        'Idea': 'idea',
+        'Validating': 'validation',
+        'Prototype / MVP': 'prototype',
+        'Early customers': 'early_revenue',
+        'Revenue': 'early_revenue',
+        'Growing': 'growth',
+      };
+
+      await apiClient.post(
+        '/businesses',
+        {
+          'businessType': [type],
+          'industry': industry,
+          'stage': stageMap[stage] ?? 'idea',
+          'idea': idea.text.trim(),
+          'problem': problem.text.trim(),
+          'targetCustomer': customer.text.trim(),
+          'availableTimeMinutesPerDay':
+              int.tryParse(time.split(' ').first) ?? 60,
+        },
+      );
+
+      appState.onboardingComplete = true;
+
+      if (mounted) {
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not save your profile: $e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => saving = false);
+      }
+    }
+  }
+
+  void next() {
+    if (step < 3) {
+      setState(() => step++);
+    } else {
+      finish();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final titles = [
+      'What are you building?',
+      'Where will you compete?',
+      'Tell IV the idea.',
+      'How much time do you have?',
+    ];
+
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'KARSU',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${step + 1}/4',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: LinearProgressIndicator(
+                  value: (step + 1) / 4,
+                  minHeight: 6,
+                  backgroundColor: AppColors.elevated,
+                ),
+              ),
+              const SizedBox(height: 30),
+              Text(
+                titles[step],
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 7),
+              const Text(
+                'Answer what you know. You can refine it later.',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: _content(),
+                ),
+              ),
+              Row(
+                children: [
+                  if (step > 0)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: saving
+                            ? null
+                            : () => setState(() => step--),
+                        child: const Text('Back'),
+                      ),
+                    ),
+                  if (step > 0) const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: saving ? null : next,
+                      child: saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              step == 3
+                                  ? 'Create my roadmap'
+                                  : 'Continue',
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chips(
+    List<String> values,
+    String selected,
+    void Function(String) onSelected,
+  ) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: values.map((value) {
+        final isSelected = value == selected;
+
+        return ChoiceChip(
+          label: Text(value),
+          selected: isSelected,
+          onSelected: (_) => onSelected(value),
+          selectedColor: AppColors.primary,
+          backgroundColor: AppColors.surface,
+          side: const BorderSide(
+            color: AppColors.border,
+          ),
+          labelStyle: TextStyle(
+            color: isSelected
+                ? Colors.white
+                : AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _content() {
+    switch (step) {
+      case 0:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Business type',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _chips(
+              types,
+              type,
+              (value) => setState(() => type = value),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Current stage',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _chips(
+              stages,
+              stage,
+              (value) => setState(() => stage = value),
+            ),
+          ],
+        );
+
+      case 1:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Industry',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _chips(
+              industries,
+              industry,
+              (value) => setState(() => industry = value),
+            ),
+          ],
+        );
+
+      case 2:
+        return Column(
+          children: [
+            TextField(
+              controller: idea,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'What are you building?',
+                hintText: 'Product, service or business idea',
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: problem,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'What problem does it solve?',
+                hintText: 'What painful problem are you solving?',
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: customer,
+              decoration: const InputDecoration(
+                labelText: 'Who is the first customer?',
+                hintText: 'Be specific if possible',
+              ),
+            ),
+          ],
+        );
+
+      default:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Daily focus time',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _chips(
+              [
+                '30 min',
+                '60 min',
+                '90 min',
+                '120 min',
+                '180 min',
+              ],
+              time,
+              (value) => setState(() => time = value),
+            ),
+            const SizedBox(height: 28),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Text(
+                        'IV will use your stage, goals and activity to recommend a focused next step.',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+    }
+  }
 }
