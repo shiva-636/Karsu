@@ -39,7 +39,7 @@ jobs:
 
       - name: Analyze Flutter project
         working-directory: mobile
-        run: flutter analyze || true
+        run: flutter analyze
 
       - name: Build APK
         working-directory: mobile
