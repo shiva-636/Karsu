@@ -115,9 +115,9 @@ class ApiClient {
           : <String, dynamic>{'data': decoded};
     } on ApiException {
       rethrow;
-    } catch (_) {
+    } catch (e) {
       throw ApiException(
-        'Unable to reach KARSU. Check your connection or API URL.',
+        'KARSU network error: $e',
         null,
       );
     }
