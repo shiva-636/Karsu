@@ -368,17 +368,17 @@ class _OnboardingWizardState extends State<OnboardingWizard> {
               (value) => setState(() => time = value),
             ),
             const SizedBox(height: 28),
-            Card(
+            const Card(
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+                padding: EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.auto_awesome,
                       color: AppColors.primary,
                     ),
-                    const SizedBox(width: 14),
-                    const Expanded(
+                    SizedBox(width: 14),
+                    Expanded(
                       child: Text(
                         'IV will use your stage, goals and activity to recommend a focused next step.',
                         style: TextStyle(
