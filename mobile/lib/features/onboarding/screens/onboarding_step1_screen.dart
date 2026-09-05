@@ -1,4 +1,3 @@
-cat > mobile/lib/features/onboarding/screens/onboarding_step1_screen.dart <<'EOF'
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
