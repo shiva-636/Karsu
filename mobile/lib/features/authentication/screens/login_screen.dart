@@ -54,7 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
             password.text,
           );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (ok) {
       context.go(
@@ -194,10 +196,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.danger.withOpacity(0.08),
+                        color: AppColors.danger.withValues(
+                          alpha: 0.08,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.danger.withOpacity(0.25),
+                          color: AppColors.danger.withValues(
+                            alpha: 0.25,
+                          ),
                         ),
                       ),
                       child: Text(
